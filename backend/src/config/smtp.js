@@ -5,6 +5,21 @@ import { env } from './env.js';
 const BREVO_DEFAULT_HOST = 'smtp-relay.brevo.com';
 
 function getEmailConfig() {
+  if (env.EMAIL_PROVIDER === 'brevo_api') {
+    return {
+      provider: 'brevo_api',
+      host: '',
+      port: 0,
+      user: '',
+      pass: env.BREVO_API_KEY,
+      from: env.BREVO_FROM || env.SMTP_FROM,
+      requiredLabels: {
+        pass: 'BREVO_API_KEY',
+        from: 'BREVO_FROM or SMTP_FROM',
+      },
+    };
+  }
+
   if (env.EMAIL_PROVIDER === 'brevo') {
     return {
       provider: 'brevo',
@@ -41,9 +56,12 @@ function getEmailConfig() {
 function getMissingSmtpVars(config = getEmailConfig()) {
   const missing = [];
 
-  if (!config.host) missing.push(config.requiredLabels.host || 'SMTP_HOST');
-  if (!config.port) missing.push(config.requiredLabels.port || 'SMTP_PORT');
-  if (!config.user) missing.push(config.requiredLabels.user);
+  if (config.provider !== 'brevo_api') {
+    if (!config.host) missing.push(config.requiredLabels.host || 'SMTP_HOST');
+    if (!config.port) missing.push(config.requiredLabels.port || 'SMTP_PORT');
+    if (!config.user) missing.push(config.requiredLabels.user);
+  }
+
   if (!config.pass) missing.push(config.requiredLabels.pass);
   if (!config.from) missing.push(config.requiredLabels.from);
 
@@ -62,6 +80,13 @@ export function createSmtpTransport() {
     logger.warn('Email service not configured; email-dependent routes will return a clean 503 error', {
       provider: config.provider,
       missingVars,
+    });
+    return null;
+  }
+
+  if (config.provider === 'brevo_api') {
+    logger.info('Email API configured', {
+      provider: config.provider,
     });
     return null;
   }
@@ -111,11 +136,20 @@ export async function verifySmtpTransportSafely(transport = smtpTransport) {
 }
 
 export function getEmailServiceStatus() {
-  return smtpTransport ? `${getEmailConfig().provider}_configured` : 'not_configured';
+  const config = getEmailConfig();
+  if (config.provider === 'brevo_api') {
+    return getMissingSmtpVars(config).length === 0 ? 'brevo_api_configured' : 'not_configured';
+  }
+
+  return smtpTransport ? `${config.provider}_configured` : 'not_configured';
 }
 
 export function getEmailFromAddress() {
   return getEmailConfig().from;
+}
+
+export function getEmailProvider() {
+  return getEmailConfig().provider;
 }
 
 export const smtpTransport = createSmtpTransport();

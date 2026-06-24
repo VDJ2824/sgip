@@ -28,7 +28,7 @@ const envSchema = z.object({
   SMTP_USER: z.string().optional().or(z.literal('')),
   SMTP_PASS: z.string().optional().or(z.literal('')),
   SMTP_FROM: z.string().optional().or(z.literal('')),
-  EMAIL_PROVIDER: z.preprocess((value) => (value === '' || value === undefined ? 'smtp' : value), z.enum(['smtp', 'brevo']).default('smtp')),
+  EMAIL_PROVIDER: z.preprocess((value) => (value === '' || value === undefined ? 'smtp' : value), z.enum(['smtp', 'brevo', 'brevo_api']).default('smtp')),
   BREVO_SMTP_HOST: z.string().optional().or(z.literal('')),
   BREVO_SMTP_PORT: z.preprocess((value) => {
     if (value === undefined || value === null || value === '') {
@@ -40,6 +40,7 @@ const envSchema = z.object({
   }, z.number().int().positive().default(587)),
   BREVO_SMTP_USER: z.string().optional().or(z.literal('')),
   BREVO_SMTP_KEY: z.string().optional().or(z.literal('')),
+  BREVO_API_KEY: z.string().optional().or(z.literal('')),
   BREVO_FROM: z.string().optional().or(z.literal('')),
   EMAIL_SEND_TIMEOUT_MS: z.coerce.number().int().positive().default(30000),
   AI_PROVIDER: z.preprocess((value) => (value === '' || value === undefined ? 'gemini' : value), z.enum(['fallback', 'openai', 'gemini']).default('gemini')),
