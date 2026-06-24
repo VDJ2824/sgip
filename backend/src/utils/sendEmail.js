@@ -1,7 +1,7 @@
 import { AppError } from '../errors/index.js';
 import { logger } from '../common/logger.js';
 import { env } from '../config/index.js';
-import { getEmailFromAddress, getEmailProvider, smtpTransport } from '../config/smtp.js';
+import { getEmailFromAddress } from '../config/smtp.js';
 
 const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
 
@@ -29,99 +29,59 @@ function parseSender(fromAddress) {
   };
 }
 
-async function sendWithBrevoApi({ to, subject, text, html }) {
+export async function sendEmail({ to, subject, text, html }) {
   if (!env.BREVO_API_KEY || !getEmailFromAddress()) {
     throw new AppError('Email service is not configured', 503, 'EMAIL_SERVICE_NOT_CONFIGURED');
   }
 
-  const response = await withTimeout(
-    fetch(BREVO_API_URL, {
-      method: 'POST',
-      headers: {
-        accept: 'application/json',
-        'api-key': env.BREVO_API_KEY,
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        sender: parseSender(getEmailFromAddress()),
-        to: [{ email: to }],
-        subject,
-        textContent: text,
-        htmlContent: html || `<p>${text}</p>`,
-      }),
-    }),
-    env.EMAIL_SEND_TIMEOUT_MS,
-  );
-
-  if (!response.ok) {
-    let providerError = {};
-    try {
-      providerError = await response.json();
-    } catch {
-      providerError = { message: await response.text() };
-    }
-
-    throw new AppError('Brevo API could not deliver the message', 503, 'EMAIL_DELIVERY_FAILED', {
-      providerStatus: response.status,
-      providerCode: providerError?.code || null,
-      providerMessage: providerError?.message || null,
-    });
-  }
-
-  return response.json();
-}
-
-async function sendWithSmtp({ to, subject, text, html }) {
-  if (!smtpTransport) {
-    throw new AppError('Email service is not configured', 503, 'EMAIL_SERVICE_NOT_CONFIGURED');
-  }
-
   try {
-    return await withTimeout(
-      smtpTransport.sendMail({
-        from: getEmailFromAddress(),
-        to,
-        subject,
-        text,
-        html,
+    const response = await withTimeout(
+      fetch(BREVO_API_URL, {
+        method: 'POST',
+        headers: {
+          accept: 'application/json',
+          'api-key': env.BREVO_API_KEY,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          sender: parseSender(getEmailFromAddress()),
+          to: [{ email: to }],
+          subject,
+          textContent: text,
+          htmlContent: html || `<p>${text}</p>`,
+        }),
       }),
       env.EMAIL_SEND_TIMEOUT_MS,
     );
+
+    if (!response.ok) {
+      let providerError = {};
+      try {
+        providerError = await response.json();
+      } catch {
+        providerError = { message: await response.text() };
+      }
+
+      throw new AppError('Brevo API could not deliver the message', 503, 'EMAIL_DELIVERY_FAILED', {
+        providerStatus: response.status,
+        providerCode: providerError?.code || null,
+        providerMessage: providerError?.message || null,
+      });
+    }
+
+    return response.json();
   } catch (error) {
-    logger.warn('SMTP sendMail failed', {
+    logger.warn('Brevo API email delivery failed', {
       to,
       subject,
-      code: error?.code || 'EMAIL_SEND_FAILED',
-      message: error?.message || 'Unknown SMTP send error',
+      code: error?.code || 'BREVO_API_SEND_FAILED',
+      details: error?.details || null,
+      message: error?.message || 'Unknown Brevo API send error',
     });
 
     if (error instanceof AppError) {
       throw error;
     }
-
-    throw new AppError('Email service could not deliver the message', 503, 'EMAIL_DELIVERY_FAILED', {
-      providerCode: error?.code || null,
-      providerResponseCode: error?.responseCode || null,
-      providerCommand: error?.command || null,
-    });
+    throw error;
   }
-}
-
-export async function sendEmail({ to, subject, text, html }) {
-  if (getEmailProvider() === 'brevo_api') {
-    try {
-      return await sendWithBrevoApi({ to, subject, text, html });
-    } catch (error) {
-      logger.warn('Brevo API email delivery failed', {
-        to,
-        subject,
-        code: error?.code || 'BREVO_API_SEND_FAILED',
-        details: error?.details || null,
-        message: error?.message || 'Unknown Brevo API error',
-      });
-      throw error;
-    }
-  }
-
-  return sendWithSmtp({ to, subject, text, html });
 }

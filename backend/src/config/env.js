@@ -16,30 +16,7 @@ const envSchema = z.object({
   JWT_SECRET: z.string().min(1, 'JWT_SECRET is required'),
   JWT_EXPIRES_IN: z.string().min(1).default('7d'),
   OTP_EXPIRES_IN_MINUTES: z.coerce.number().int().positive().default(10),
-  SMTP_HOST: z.string().optional().or(z.literal('')),
-  SMTP_PORT: z.preprocess((value) => {
-    if (value === undefined || value === null || value === '') {
-      return 587;
-    }
-
-    const parsed = Number(value);
-    return Number.isInteger(parsed) && parsed > 0 ? parsed : 587;
-  }, z.number().int().positive().default(587)),
-  SMTP_USER: z.string().optional().or(z.literal('')),
-  SMTP_PASS: z.string().optional().or(z.literal('')),
-  SMTP_FROM: z.string().optional().or(z.literal('')),
-  EMAIL_PROVIDER: z.preprocess((value) => (value === '' || value === undefined ? 'smtp' : value), z.enum(['smtp', 'brevo', 'brevo_api']).default('smtp')),
-  BREVO_SMTP_HOST: z.string().optional().or(z.literal('')),
-  BREVO_SMTP_PORT: z.preprocess((value) => {
-    if (value === undefined || value === null || value === '') {
-      return 587;
-    }
-
-    const parsed = Number(value);
-    return Number.isInteger(parsed) && parsed > 0 ? parsed : 587;
-  }, z.number().int().positive().default(587)),
-  BREVO_SMTP_USER: z.string().optional().or(z.literal('')),
-  BREVO_SMTP_KEY: z.string().optional().or(z.literal('')),
+  EMAIL_PROVIDER: z.preprocess((value) => (value === '' || value === undefined ? 'brevo_api' : value), z.literal('brevo_api').default('brevo_api')),
   BREVO_API_KEY: z.string().optional().or(z.literal('')),
   BREVO_FROM: z.string().optional().or(z.literal('')),
   EMAIL_SEND_TIMEOUT_MS: z.coerce.number().int().positive().default(30000),
