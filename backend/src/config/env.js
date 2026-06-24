@@ -16,7 +16,7 @@ const envSchema = z.object({
   JWT_SECRET: z.string().min(1, 'JWT_SECRET is required'),
   JWT_EXPIRES_IN: z.string().min(1).default('7d'),
   OTP_EXPIRES_IN_MINUTES: z.coerce.number().int().positive().default(10),
-  EMAIL_PROVIDER: z.preprocess((value) => (value === '' || value === undefined ? 'brevo_api' : value), z.literal('brevo_api').default('brevo_api')),
+  EMAIL_PROVIDER: z.preprocess(() => 'brevo_api', z.literal('brevo_api').default('brevo_api')),
   BREVO_API_KEY: z.string().optional().or(z.literal('')),
   BREVO_FROM: z.string().optional().or(z.literal('')),
   EMAIL_SEND_TIMEOUT_MS: z.coerce.number().int().positive().default(30000),
