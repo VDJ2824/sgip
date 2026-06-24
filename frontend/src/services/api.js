@@ -1,6 +1,8 @@
 import axios from 'axios';
 import { getStoredToken, getStoredUser } from '@/utils/authStorage';
 
+const API_TIMEOUT_MS = Number(import.meta.env.VITE_API_TIMEOUT_MS || 45000);
+
 function normalizeApiError(error) {
   const apiError = new Error(
     error?.response?.data?.error?.message ||
@@ -19,7 +21,7 @@ function normalizeApiError(error) {
 function createClient(baseURL) {
   const client = axios.create({
     baseURL,
-    timeout: 20000,
+    timeout: API_TIMEOUT_MS,
     headers: {
       'Content-Type': 'application/json',
     },
