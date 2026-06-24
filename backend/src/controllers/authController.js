@@ -46,6 +46,15 @@ async function issueOtp(user, purpose) {
       purpose,
       error: error?.message || 'Unknown email error',
     });
+
+    if (env.NODE_ENV === 'production') {
+      throw new AppError(
+        'Unable to send OTP email right now. Please check email service configuration.',
+        503,
+        error?.code || 'EMAIL_DELIVERY_FAILED',
+      );
+    }
+
     return { otp, emailSent: false };
   }
 

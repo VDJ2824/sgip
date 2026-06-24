@@ -77,6 +77,9 @@ export function createSmtpTransport() {
       host: config.host,
       port: config.port,
       secure: Number(config.port) === 465,
+      connectionTimeout: env.EMAIL_SEND_TIMEOUT_MS,
+      greetingTimeout: env.EMAIL_SEND_TIMEOUT_MS,
+      socketTimeout: env.EMAIL_SEND_TIMEOUT_MS,
       auth: {
         user: config.user,
         pass: config.pass,

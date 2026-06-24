@@ -40,6 +40,7 @@ const envSchema = z.object({
   BREVO_SMTP_USER: z.string().optional().or(z.literal('')),
   BREVO_SMTP_KEY: z.string().optional().or(z.literal('')),
   BREVO_FROM: z.string().optional().or(z.literal('')),
+  EMAIL_SEND_TIMEOUT_MS: z.coerce.number().int().positive().default(10000),
   AI_PROVIDER: z.preprocess((value) => (value === '' || value === undefined ? 'gemini' : value), z.enum(['fallback', 'openai', 'gemini']).default('gemini')),
   AI_MODEL: z.string().optional().or(z.literal('')),
   AI_API_KEY: z.string().optional().or(z.literal('')),
