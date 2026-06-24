@@ -25,17 +25,35 @@ import authRoutes from './routes/authRoutes.js';
 import adminRoutes from './modules/admin/admin.routes.js';
 import mentorRoutes from './modules/mentor/mentor.routes.js';
 
+function normalizeOrigin(origin) {
+  return String(origin || '').trim().replace(/\/+$/, '');
+}
+
+function getAllowedOrigins() {
+  const configuredOrigins = [
+    env.FRONTEND_URL,
+    ...String(env.FRONTEND_URLS || '')
+      .split(',')
+      .map((origin) => origin.trim())
+      .filter(Boolean),
+  ];
+
+  return new Set(
+    [...configuredOrigins, 'http://localhost:5173', 'http://127.0.0.1:5173']
+      .map(normalizeOrigin)
+      .filter(Boolean),
+  );
+}
+
 export function createApp() {
   const app = express();
-  const allowedOrigins = new Set(
-    [env.FRONTEND_URL, 'http://localhost:5173', 'http://127.0.0.1:5173'].filter(Boolean),
-  );
+  const allowedOrigins = getAllowedOrigins();
 
   app.use(helmet());
   app.use(
     cors({
       origin(origin, callback) {
-        if (!origin || allowedOrigins.has(origin)) {
+        if (!origin || allowedOrigins.has(normalizeOrigin(origin))) {
           return callback(null, true);
         }
         return callback(new Error(`CORS blocked for origin: ${origin}`));

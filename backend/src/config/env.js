@@ -9,6 +9,7 @@ const envSchema = z.object({
   MONGO_URI: z.string().optional().or(z.literal('')),
   MONGODB_URI: z.string().optional().or(z.literal('')),
   FRONTEND_URL: z.string().url().default('http://localhost:5173'),
+  FRONTEND_URLS: z.string().optional().or(z.literal('')),
   CLOUDINARY_CLOUD_NAME: z.string().optional().or(z.literal('')),
   CLOUDINARY_API_KEY: z.string().optional().or(z.literal('')),
   CLOUDINARY_API_SECRET: z.string().optional().or(z.literal('')),
